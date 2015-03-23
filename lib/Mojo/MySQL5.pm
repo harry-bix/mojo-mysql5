@@ -225,23 +225,24 @@ easily.
 =head2 url
 
   my $url = $mysql->url;
-  $url  = $mysql->url(Mojo::MySQL5::URL->new('mysql://user@host/test?connect_timeout=0'));
+  $url  = $mysql->url(
+    Mojo::MySQL5::URL->new('mysql://user@host/test?connect_timeout=0'));
 
 Connection L<URL|Mojo::MySQL5::URL>.
 
 =head2 options
 
-Use L<url|"/url">->options.
+Use L<url|/"url">->options.
 
 See L<Mojo::MySQL5::Connection> for list of supported options.
 
 =head2 password
 
-Use L<url|"/url">->password.
+Use L<url|/"url">->password.
 
 =head2 username
 
-Use L<url|"/url">->username.
+Use L<url|/"url">->username.
 
 
 =head1 METHODS
