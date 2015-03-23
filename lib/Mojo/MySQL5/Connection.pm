@@ -474,8 +474,8 @@ sub _seq {
     $cb ? $self->$cb() : $self->_ioloop(0)->stop;
   });
 
-  $self->_seq_next($cmd, 1);
   $self->{stream}->start;
+  $self->_seq_next($cmd, 1);
 }
 
 sub _cmd {
