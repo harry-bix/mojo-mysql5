@@ -41,7 +41,7 @@ sub from_string {
   return $self->url($url);
 }
 
-sub new { @_ > 1 ? shift->SUPER::new->from_string(@_) : shift->SUPER::new }
+sub new { @_ == 2 ? shift->SUPER::new->from_string(@_) : shift->SUPER::new(@_) }
 
 sub _dequeue {
   my $self = shift;
@@ -228,46 +228,11 @@ easily.
 
 Connection L<URL|Mojo::MySQL5::URL>.
 
-Supported URL Options are:
-
-=over 2
-
-=item found_rows
-
-Enables or disables the flag C<CLIENT_FOUND_ROWS> while connecting to the server.
-Without C<found_rows>, if you perform a query like
- 
-  UPDATE $table SET id = 1 WHERE id = 1;
- 
-then the MySQL engine will return 0, because no rows have changed.
-With C<found_rows>, it will return the number of rows that have an id 1.
-
-=item multi_statements
-
-Enables or disables the flag C<CLIENT_MULTI_STATEMENTS> while connecting to the server.
-If enabled multiple statements separated by semicolon (;) can be send with single
-call to $db->L<query|Mojo::MySQL5::Database/"query">.
-
-=item utf8
-
-Set default character set to C<utf-8> while connecting to the server
-and decode correctly utf-8 text results.
-
-=item connect_timeout
-
-The connect request to the server will timeout if it has not been successful
-after the given number of seconds.
-
-=item query_timeout
-
-If enabled, the read or write operation to the server will timeout
-if it has not been successful after the given number of seconds.
-
-=back
-
 =head2 options
 
 Use L<url|"/url">->options.
+
+See L<Mojo::Mysql5::Connection> for list of supported options.
 
 =head2 password
 
@@ -320,7 +285,16 @@ Parse configuration from connection string.
 =head2 new
 
   my $mysql = Mojo::MySQL5->new;
-  my $mysql = Mojo::MySQL5->new('mysql://user:password@host:port/database');
+  my $mysql = Mojo::MySQL5->new('mysql://user:s3cret@host:port/database');
+  my $mysql = Mojo::MySQL5->new(
+    url => Mojo::MySQL5::URL->new(
+      host => 'localhost',
+      port => 3306,
+      username => 'user',
+      password => 's3cret',
+      options => { utf8 => 1, found_rows => 1 }
+    )
+  );
 
 Construct a new L<Mojo::MySQL5> object and parse connection string with
 L</"from_string"> if necessary.
@@ -359,7 +333,7 @@ This code is mostly a rip-off from Sebastian Riedel's L<Mojo::Pg>.
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2014-2015, Jan Henning Thorsen.
+Copyright (C) 2015, Svetoslav Naydenov.
 
 This program is free software, you can redistribute it and/or modify it under
 the terms of the Artistic License version 2.0.
