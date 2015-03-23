@@ -5,7 +5,6 @@ use Carp 'croak';
 use Mojo::MySQL5::Migrations;
 use Mojo::MySQL5::URL;
 use Mojo::MySQL5::Database;
-use Mojo::Util 'deprecated';
 use Scalar::Util 'weaken';
 
 has max_connections => 5;
@@ -159,30 +158,6 @@ holding on to them only for short amounts of time.
 
   app->start;
 
-This module implements two methods of connecting to MySQL server.
-
-=over 2
-
-=item Using DBI and DBD::MySQL5
-
-L<DBD::MySQL5> allows you to submit a long-running query to the server
-and have an event loop inform you when it's ready. 
-
-While all I/O operations are performed blocking,
-you can wait for long running queries asynchronously, allowing the
-L<Mojo::IOLoop> event loop to perform other tasks in the meantime. Since
-database connections usually have a very low latency, this often results in
-very good performance.
-
-=item Using Native Pure-Perl Non-Blocking I/O
-
-L<Mojo::MySQL5::Connection> is Fully asynchronous implementation
-of MySQL Client Server Protocol managed by L<Mojo::IOLoop>.
-
-This method is EXPERIMENTAL.
-
-=back
-
 Every database connection can only handle one active query at a time, this
 includes asynchronous ones. So if you start more than one, they will be put on
 a waiting list and performed sequentially. To perform multiple queries
@@ -223,15 +198,6 @@ Emitted when a new database connection has been established.
 
 L<Mojo::MySQL5> implements the following attributes.
 
-=head2 dsn
-
-  my $dsn = $mysql->dsn;
-  $mysql  = $mysql->dsn('dbi:mysql:dbname=foo');
-
-Data Source Name.
-
-This attribute is DEPRECATED and is L<DBI> specific. Use L<url|"/url">->dsn istead.
-
 =head2 max_connections
 
   my $max = $mysql->max_connections;
@@ -244,8 +210,7 @@ C<5>.
 
 MySQL does not support nested transactions and DDL transactions.
 DDL statements cause implicit C<COMMIT>.
-B<Therefore, migrations should be used with extreme caution.
-Backup your database. You've been warned.> 
+B<Therefore, migrations should be used with extreme caution.> 
 
   my $migrations = $mysql->migrations;
   $mysql         = $mysql->migrations(Mojo::MySQL5::Migrations->new);
@@ -255,33 +220,6 @@ easily.
 
   # Load migrations from file and migrate to latest version
   $mysql->migrations->from_file('/home/sri/migrations.sql')->migrate;
-
-=head2 options
-
-  my $options = $mysql->options;
-  $mysql      = $mysql->options({found_rows => 0, utf8 => 1});
-
-Options for connecting to server.
-
-This attribute is DEPRECATED. Use L<url|"/url">->options istead.
-
-=head2 password
-
-  my $password = $mysql->password;
-  $mysql       = $mysql->password('s3cret');
-
-Database password, defaults to an empty string.
-
-This attribute is DEPRECATED. Use L<url|"/url">->password istead.
-
-=head2 username
-
-  my $username = $mysql->username;
-  $mysql       = $mysql->username('batman');
-
-Database username, defaults to an empty string.
-
-This attribute is DEPRECATED. Use L<url|"/url">->username istead.
 
 =head2 url
 
@@ -293,11 +231,6 @@ Connection L<URL|Mojo::MySQL5::URL>.
 Supported URL Options are:
 
 =over 2
-
-=item use_dbi
-
-Use L<DBI|DBI> and L<DBD::MySQL5> when enabled or not specified.
-Native implementation when disabled.
 
 =item found_rows
 
@@ -332,18 +265,18 @@ if it has not been successful after the given number of seconds.
 
 =back
 
-Default Options are:
+=head2 options
 
-C<utf8 = 1>,
-C<found_rows = 1>
+Use L<url|"/url">->options.
 
-When using DBI method, driver private options (prefixed with C<mysql_>) of L<DBD::MySQL5> are supported.
+=head2 password
 
-C<mysql_auto_reconnect> is never enabled, L<Mojo::MySQL5> takes care of dead connections.
+Use L<url|"/url">->password.
 
-C<AutoCommit> cannot not be disabled, use $db->L<begin|Mojo::MySQL5::Database/"begin"> to manage transactions.
+=head2 username
 
-C<RaiseError> is always enabled for blocking and disabled non-blocking queries.
+Use L<url|"/url">->username.
+
 
 =head1 METHODS
 
@@ -418,9 +351,9 @@ This is the class hierarchy of the L<Mojo::MySQL5> distribution.
 
 =head1 AUTHOR
 
-Curt Hochwender, C<hochwender@centurytel.net>.
-
 Jan Henning Thorsen, C<jhthorsen@cpan.org>.
+
+Svetoslav Naydenov, C<harryl@cpan.org>.
 
 This code is mostly a rip-off from Sebastian Riedel's L<Mojo::Pg>.
 
@@ -433,7 +366,10 @@ the terms of the Artistic License version 2.0.
 
 =head1 SEE ALSO
 
-L<Mojo::Pg>, L<https://github.com/jhthorsen/mojo-mysql>,
+L<Mojo::Pg> Async Connector for PostgreSQL using L<DBD::Pg>, L<https://github.com/kraih/mojo-pg>,
+
+L<Mojo::mysql> Async Connector for MySQL using L<DBD::mysql>, L<https://github.com/jhthorsen/mojo-mysql>,
+
 L<Mojolicious::Guides>, L<http://mojolicio.us>.
 
 =cut
