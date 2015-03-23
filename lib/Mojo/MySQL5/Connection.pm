@@ -10,10 +10,6 @@ use Mojo::MySQL5::Util qw(flag_list flag_set);
 
 has 'url';
 
-has options => sub { {
-  found_rows => 0, multi_statements => 0, utf8 => 1,
-  connect_timeout => 10, query_timeout => 0 } };
-
 has _state => 'disconnected';
 
 use constant DEBUG => $ENV{MOJO_MYSQL_DEBUG} // 0;
@@ -162,8 +158,8 @@ sub _send_auth {
 
   my @flags = qw(LONG_PASSWORD LONG_FLAG PROTOCOL_41 TRANSACTIONS SECURE_CONNECTION MULTI_RESULTS);
   push @flags, 'CONNECT_WITH_DB' if $database;
-  push @flags, 'MULTI_STATEMENTS' if $self->options->{multi_statements};
-  push @flags, 'FOUND_ROWS' if $self->options->{found_rows};
+  push @flags, 'MULTI_STATEMENTS' if $self->url->options->{multi_statements};
+  push @flags, 'FOUND_ROWS' if $self->url->options->{found_rows};
   my $flags = flag_set(CLIENT_CAPABILITY, @flags);
 
   warn '>>> AUTH ', $self->{connection_id}, ' #', $self->{seq}, ' state:', $self->_state, "\n",
@@ -182,7 +178,7 @@ sub _send_auth {
   $self->_state('auth');
   delete $self->{auth_plugin_data};
   return pack 'VVCx23Z*a*Z*',
-    $flags, 131072, $self->options->{utf8} ? CHARSET->{UTF8} : CHARSET->{BINARY},
+    $flags, 131072, ($self->url->options->{utf8} // 1) ? CHARSET->{UTF8} : CHARSET->{BINARY},
     $username, _encode_lcstr($crypt), $database, 'mysql_native_password';
 }
 
@@ -322,7 +318,8 @@ sub _recv_field {
   $field->{decimals} = $self->_chew_int(1);
   $self->_chew_str(2);
 
-  do { _utf8_on $field->{$_} for qw(catalog schema table org_table name org_name) } if $self->options->{utf8};
+  do { _utf8_on $field->{$_} for qw(catalog schema table org_table name org_name) }
+    if ($self->url->options->{utf8} // 1);
 
   push @{$self->{column_info}}, $field;
 
@@ -442,8 +439,8 @@ sub _seq {
 
   $self->{stream} = Mojo::IOLoop::Stream->new($self->{socket});
   $self->{stream}->reactor($self->_ioloop(0)->reactor) unless $cb;
-  $self->{stream}->timeout($self->options->{query_timeout})
-    if $self->options->{query_timeout};
+  $self->{stream}->timeout($self->url->options->{query_timeout})
+    if $self->url->options->{query_timeout};
   weaken $self;
 
   $self->{stream}->on(read => sub {
@@ -520,7 +517,7 @@ sub connect {
   $self->{client}->connect(
     address => $self->url->host || 'localhost',
     port => $self->url->port || 3306,
-    timeout => $self->options->{connect_timeout}
+    timeout => $self->url->options->{connect_timeout} // 10
   );
 
   $self->_ioloop(0)->start unless $cb;
