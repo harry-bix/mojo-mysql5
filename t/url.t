@@ -11,7 +11,6 @@ is $url->password, '',        'no password';
 my $options = {
   utf8 => 1,
   found_rows => 1,
-  PrintError => 0,
 };
 is_deeply $url->options, $options, 'right options';
 
@@ -23,7 +22,6 @@ is $url->password, '',                    'no password';
 $options = {
   utf8 => 1,
   found_rows => 1,
-  PrintError => 0,
 };
 is_deeply $url->options, $options, 'right options';
 
@@ -48,7 +46,6 @@ is $url->password, '', 'no password';
 $options = {
   utf8 => 1,
   found_rows => 1,
-  PrintError => 0,
 };
 is_deeply $url->options, $options, 'right options';
 
@@ -60,7 +57,6 @@ is $url->password, '',                    'no password';
 $options = {
   utf8 => 1,
   found_rows => 1,
-  PrintError => 0,
 };
 is_deeply $url->options, $options, 'right options';
 

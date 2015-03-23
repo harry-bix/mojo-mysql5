@@ -259,7 +259,7 @@ easily.
 =head2 options
 
   my $options = $mysql->options;
-  $mysql      = $mysql->options({found_rows => 0, PrintError => 1});
+  $mysql      = $mysql->options({found_rows => 0, utf8 => 1});
 
 Options for connecting to server.
 
@@ -286,7 +286,7 @@ This attribute is DEPRECATED. Use L<url|"/url">->username istead.
 =head2 url
 
   my $url = $mysql->url;
-  $url  = $mysql->url(Mojo::MySQL5::URL->new('mysql://user@host/test?PrintError=0'));
+  $url  = $mysql->url(Mojo::MySQL5::URL->new('mysql://user@host/test?connect_timeout=0'));
 
 Connection L<URL|Mojo::MySQL5::URL>.
 
@@ -330,17 +330,12 @@ after the given number of seconds.
 If enabled, the read or write operation to the server will timeout
 if it has not been successful after the given number of seconds.
 
-=item PrintError
-
-C<warn> on errors.
-
 =back
 
 Default Options are:
 
 C<utf8 = 1>,
-C<found_rows = 1>,
-C<PrintError = 0>
+C<found_rows = 1>
 
 When using DBI method, driver private options (prefixed with C<mysql_>) of L<DBD::MySQL5> are supported.
 

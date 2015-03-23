@@ -32,9 +32,6 @@ sub begin {
 sub connect {
   my ($self, $url) = @_;
   my $c = Mojo::MySQL5::Connection->new(url => $url);
-  do { $c->options->{$_} = $url->options->{$_} if exists $url->options->{$_} }
-    for qw(found_rows multi_statements utf8 connect_timeout query_timeout);
-
   eval { $c->connect };
   croak "Unable to connect to '$url' $@" if $@;
   return $self->connection($c);

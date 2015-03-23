@@ -15,12 +15,7 @@ sub parse {
   }
 
   my $hash = $self->query->to_hash;
-  $self->{options} = {
-    utf8 => 1,
-    found_rows => 1,
-    PrintError => 0
-  } unless exists $self->{options};
-
+  $self->{options} = { utf8 => 1, found_rows => 1 } unless exists $self->{options};
   @{$self->options}{keys %$hash} = values %$hash;
 
   return $self;

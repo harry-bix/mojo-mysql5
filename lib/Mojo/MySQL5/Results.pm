@@ -202,6 +202,6 @@ Error message receieved.
 
 =head1 SEE ALSO
 
-L<Mojo::MySQL5>.
+L<Mojo::MySQL5>, L<Mojo::MySQL5::Database>.
 
 =cut
