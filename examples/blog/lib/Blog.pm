@@ -2,7 +2,7 @@ package Blog;
 use Mojo::Base 'Mojolicious';
 
 use Blog::Model::Posts;
-use Mojo::mysql;
+use Mojo::MySQL5;
 
 sub startup {
   my $self = shift;
@@ -12,7 +12,7 @@ sub startup {
   $self->secrets($self->config('secrets'));
 
   # Model
-  $self->helper(mysql => sub { state $mysql = Mojo::mysql->new(shift->config('mysql')) });
+  $self->helper(mysql => sub { state $mysql = Mojo::MySQL5->new(shift->config('mysql')) });
   $self->helper(
     posts => sub { state $posts = Blog::Model::Posts->new(mysql => shift->mysql) });
 
