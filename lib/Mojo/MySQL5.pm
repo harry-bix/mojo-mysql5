@@ -232,7 +232,7 @@ Connection L<URL|Mojo::MySQL5::URL>.
 
 Use L<url|"/url">->options.
 
-See L<Mojo::Mysql5::Connection> for list of supported options.
+See L<Mojo::MySQL5::Connection> for list of supported options.
 
 =head2 password
 
@@ -329,7 +329,7 @@ Jan Henning Thorsen, C<jhthorsen@cpan.org>.
 
 Svetoslav Naydenov, C<harryl@cpan.org>.
 
-This code is mostly a rip-off from Sebastian Riedel's L<Mojo::Pg>.
+A lot of code in this module is taken from Sebastian Riedel's L<Mojo::Pg>.
 
 =head1 COPYRIGHT AND LICENSE
 
