@@ -1,0 +1,188 @@
+NAME
+    Mojo::mysql - Mojolicious and Async MySQL
+
+SYNOPSIS
+      use Mojo::mysql;
+
+      # Create a table
+      my $mysql = Mojo::mysql->new('mysql://username@/test');
+      $mysql->db->do('create table if not exists names (name text)');
+
+      # Insert a few rows
+      my $db = $mysql->db;
+      $db->query('insert into names values (?)', 'Sara');
+      $db->query('insert into names values (?)', 'Daniel');
+
+      # Select all rows blocking
+      say for $db->query('select * from names')
+        ->hashes->map(sub { $_->{name} })->each;
+
+      # Select all rows non-blocking
+      Mojo::IOLoop->delay(
+        sub {
+          my $delay = shift;
+          $db->query('select * from names' => $delay->begin);
+        },
+        sub {
+          my ($delay, $err, $results) = @_;
+          say for $results->hashes->map(sub { $_->{name} })->each;
+        }
+      )->wait;
+
+DESCRIPTION
+    Mojo::mysql is a tiny wrapper around DBD::mysql that makes MySQL
+    <http://www.mysql.org> a lot of fun to use with the Mojolicious
+    <http://mojolicio.us> real-time web framework.
+
+    Database handles are cached automatically, so they can be reused
+    transparently to increase performance. While all I/O operations are
+    performed blocking, you can wait for long running queries
+    asynchronously, allowing the Mojo::IOLoop event loop to perform other
+    tasks in the meantime. Since database connections usually have a very
+    low latency, this often results in very good performance.
+
+    All cached database handles will be reset automatically if a new process
+    has been forked, this allows multiple processes to share the same
+    Mojo::mysql object safely.
+
+    Note that this whole distribution is EXPERIMENTAL and will change
+    without warning!
+
+EVENTS
+    Mojo::mysql inherits all events from Mojo::EventEmitter and can emit the
+    following new ones.
+
+  connection
+      $mysql->on(connection => sub {
+        my ($mysql, $dbh) = @_;
+        ...
+      });
+
+    Emitted when a new database connection has been established.
+
+ATTRIBUTES
+    Mojo::mysql implements the following attributes.
+
+  dsn
+      my $dsn = $mysql->dsn;
+      $mysql  = $mysql->dsn('dbi:mysql:dbname=foo');
+
+    Data Source Name, defaults to "dbi:mysql:dbname=test".
+
+  max_connections
+      my $max = $mysql->max_connections;
+      $mysql  = $mysql->max_connections(3);
+
+    Maximum number of idle database handles to cache for future use,
+    defaults to 5.
+
+  migrations
+    MySQL does not support DDL transactions. Therefore, migrations should be
+    used with extreme caution. Backup your database. You've been warned.
+
+      my $migrations = $mysql->migrations;
+      $mysql         = $mysql->migrations(Mojo::mysql::Migrations->new);
+
+    Mojo::mysql::Migrations object you can use to change your database
+    schema more easily.
+
+      # Load migrations from file and migrate to latest version
+      $mysql->migrations->from_file('/Users/sri/migrations.sql')->migrate;
+
+  options
+      my $options = $mysql->options;
+      $mysql      = $mysql->options({mysql_use_result => 1});
+
+    Options for database handles, defaults to activating
+    "mysql_enable_utf8", "AutoCommit" as well as "RaiseError" and
+    deactivating "PrintError".
+
+    "mysql_auto_reconnect" is never enabled, Mojo::mysql takes care of dead
+    connections.
+
+    "AutoCommit" cannot not be disabled, use $db->begin to manage
+    transactions.
+
+    "RaiseError" is disabled in event loop for asyncronous queries.
+
+  password
+      my $password = $mysql->password;
+      $mysql       = $mysql->password('s3cret');
+
+    Database password, defaults to an empty string.
+
+  username
+      my $username = $mysql->username;
+      $mysql       = $mysql->username('batman');
+
+    Database username, defaults to an empty string.
+
+METHODS
+    Mojo::mysql inherits all methods from Mojo::EventEmitter and implements
+    the following new ones.
+
+  db
+      my $db = $mysql->db;
+
+    Get Mojo::mysql::Database object for a cached or newly created database
+    handle. The database handle will be automatically cached again when that
+    object is destroyed, so you can handle connection timeouts gracefully by
+    holding on to it only for short amounts of time.
+
+  from_string
+      $mysql = $mysql->from_string('mysql://user@/test');
+
+    Parse configuration from connection string.
+
+      # Just a database
+      $mysql->from_string('mysql:///db1');
+
+      # Username and database
+      $mysql->from_string('mysql://batman@/db2');
+
+      # Username, password, host and database
+      $mysql->from_string('mysql://batman:s3cret@localhost/db3');
+
+      # Username, domain socket and database
+      $mysql->from_string('mysql://batman@%2ftmp%2fmysql.sock/db4');
+
+      # Username, database and additional options
+      $mysql->from_string('mysql://batman@/db5?PrintError=1&RaiseError=0');
+
+  new
+      my $mysql = Mojo::mysql->new;
+      my $mysql = Mojo::mysql->new('mysql://user@/test');
+
+    Construct a new Mojo::mysql object and parse connection string with
+    "from_string" if necessary.
+
+REFERENCE
+    This is the class hierarchy of the Mojo::mysql distribution.
+
+    * Mojo::mysql
+
+    * Mojo::mysql::Database
+
+    * Mojo::mysql::Migrations
+
+    * Mojo::mysql::Results
+
+    * Mojo::mysql::Transaction
+
+AUTHOR
+    Curt Hochwender, "hochwender@centurytel.net".
+
+    Jan Henning Thorsen, "jhthorsen@cpan.org".
+
+    This code is mostly a rip-off from Sebastian Riedel's Mojo::Pg.
+
+COPYRIGHT AND LICENSE
+    Copyright (C) 2014-2015, Jan Henning Thorsen.
+
+    This program is free software, you can redistribute it and/or modify it
+    under the terms of the Artistic License version 2.0.
+
+SEE ALSO
+    Mojo::Pg, <https://github.com/jhthorsen/mojo-mysql>,
+    Mojolicious::Guides, <http://mojolicio.us>.
+
