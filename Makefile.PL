@@ -11,7 +11,7 @@ WriteMakefile(
     resources => {
       bugtracker => 'https://github.com/harry-bix/mojo-MySQL5/issues',
       homepage => 'https://github.com/harry-bix/mojo-MySQL5',
-      repository => 'https://github.com/harry-bix/mojo-MySQL5.git',
+      repository => 'https://github.com///github.com/harry-bix/mojo-MySQL5.git',
     },
   },
   BUILD_REQUIRES => {
