@@ -94,7 +94,8 @@ Mojo::MySQL5 - Pure-Perl non-blocking I/O MySQL Connector
 
   # Create a table
   my $mysql = Mojo::MySQL5->new('mysql://username@/test');
-  $mysql->db->query('create table names (id integer auto_increment primary key, name text)');
+  $mysql->db->query(
+    'create table names (id integer auto_increment primary key, name text)');
 
   # Insert a few rows
   my $db = $mysql->db;
@@ -339,6 +340,8 @@ This program is free software, you can redistribute it and/or modify it under
 the terms of the Artistic License version 2.0.
 
 =head1 SEE ALSO
+
+L<https://github.com/harryl/mojo-mysql5>,
 
 L<Mojo::Pg> Async Connector for PostgreSQL using L<DBD::Pg>, L<https://github.com/kraih/mojo-pg>,
 
