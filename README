@@ -6,7 +6,8 @@ SYNOPSIS
 
       # Create a table
       my $mysql = Mojo::MySQL5->new('mysql://username@/test');
-      $mysql->db->query('create table names (id integer auto_increment primary key, name text)');
+      $mysql->db->query(
+        'create table names (id integer auto_increment primary key, name text)');
 
       # Insert a few rows
       my $db = $mysql->db;
@@ -129,7 +130,8 @@ ATTRIBUTES
 
   url
       my $url = $mysql->url;
-      $url  = $mysql->url(Mojo::MySQL5::URL->new('mysql://user@host/test?connect_timeout=0'));
+      $url  = $mysql->url(
+        Mojo::MySQL5::URL->new('mysql://user@host/test?connect_timeout=0'));
 
     Connection URL.
 
@@ -229,6 +231,8 @@ COPYRIGHT AND LICENSE
     under the terms of the Artistic License version 2.0.
 
 SEE ALSO
+    <https://github.com/harryl/mojo-mysql5>,
+
     Mojo::Pg Async Connector for PostgreSQL using DBD::Pg,
     <https://github.com/kraih/mojo-pg>,
 

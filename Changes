@@ -1,9 +1,9 @@
 Revision history for Mojo::MySQL5
 
-0.02
+0.02     Tue Mar 24 13:12:49 2015
        * blog example from Mojo::Pg
        * Improved Mojo::mysql::Migrations to make no changes to the database when
-        checking the currently active version.
+         checking the currently active version.
        * Fixed Mojo::mysql::Migrations to handle UTF-8 encoded files correctly
 
 0.01     Mon Mar 23 16:53:07 2015
