@@ -1,11 +1,13 @@
 Revision history for Mojo::MySQL5
 
 0.03
-       * Corrected pod
+       * Corrected POD
        * Fixed error handling on connect failure
        * Fixed Mojo::MySQL5::Migrations to allow delimiter in comments and quoted strings
        * delimiter support in Mojo::MySQL5::Migrations,
          allows creation of stored procedures and triggers in migration scripts
+       * Removed Mojo::MySQL5::Util
+       * 'quote' and 'quote_id' methods in Mojo::MySQL5::Database
 
 0.02     Tue Mar 24 13:12:49 2015
        * blog example from Mojo::Pg

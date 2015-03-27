@@ -325,8 +325,6 @@ This is the class hierarchy of the L<Mojo::MySQL5> distribution.
 
 =item * L<Mojo::MySQL5::URL>
 
-=item * L<Mojo::MySQL5::Util>
-
 =back
 
 =head1 AUTHOR

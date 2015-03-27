@@ -40,9 +40,7 @@ sub from_string {
       ($new, $token, $delimiter) = (1, ${^MATCH}, $1);
     }
     elsif ($sql =~ /^(\s+)/s                                # whitespace
-      or $sql =~ /^(\w+)/                                   # general name
-      )
-    {
+      or $sql =~ /^(\w+)/) {                                # general name
       $token = $1;
     }
     elsif ($sql =~ /^--.*(?:\n|\z)/p                        # double-dash comment
@@ -50,9 +48,7 @@ sub from_string {
       or $sql =~ /^\/\*(?:[^\*]|\*[^\/])*(?:\*\/|\*\z|\z)/p # C-style comment
       or $sql =~ /^'(?:[^'\\]*|\\(?:.|\n)|'')*(?:'|\z)/p    # single-quoted literal text
       or $sql =~ /^"(?:[^"\\]*|\\(?:.|\n)|"")*(?:"|\z)/p    # double-quoted literal text
-      or $sql =~ /^`(?:[^`]*|``)*(?:`|\z)/p                 # schema-quoted literal text
-      )
-    {
+      or $sql =~ /^`(?:[^`]*|``)*(?:`|\z)/p) {              # schema-quoted literal text
       $token = ${^MATCH};
     }
     else {
