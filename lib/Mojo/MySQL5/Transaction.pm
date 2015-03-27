@@ -55,7 +55,7 @@ L<Mojo::MySQL5::Database> object this transaction belongs to.
 
 =head1 METHODS
 
-L<Mojo::MySQL5::Transaction> inherits all methods from L<Mojo::MySQL5::Transaction> and
+L<Mojo::MySQL5::Transaction> inherits all methods from L<Mojo::Base> and
 implements the following ones.
 
 =head2 commit
@@ -67,6 +67,7 @@ Commit transaction.
 =head2 new
 
   my $tx = Mojo::MySQL5::Transaction->new;
+  my $tx = Mojo::MySQL5::Transaction->new(db => Mojo::MySQL5::Database->new);
 
 Construct a new L<Mojo::MySQL5::Transaction> object.
 
