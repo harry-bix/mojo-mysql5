@@ -15,7 +15,7 @@ sub parse {
   }
 
   my $hash = $self->query->to_hash;
-  $self->{options} = { utf8 => 1, found_rows => 1 } unless exists $self->{options};
+  $self->{options} = { } unless exists $self->{options};
   @{$self->options}{keys %$hash} = values %$hash;
 
   return $self;
@@ -77,7 +77,7 @@ Mojo::MySQL5::URL - MySQL Connection URL
   say $url->host;
   say $url->port;
   say $url->database;
-  say $url->query;
+  say $url->options;
  
   # Build
   my $url = Mojo::MySQL5::URL->new;
@@ -86,7 +86,7 @@ Mojo::MySQL5::URL - MySQL Connection URL
   $url->host('server');
   $url->port(3306);
   $url->database('test');
-  $url->query(foo => 'bar');
+  $url->options(foo => 'bar');
   say "$url";
  
 =head1 DESCRIPTION

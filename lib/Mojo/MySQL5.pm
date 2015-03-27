@@ -39,6 +39,9 @@ sub from_string {
   my $url = Mojo::MySQL5::URL->new($str);
   croak qq{Invalid MySQL connection string "$str"} unless $url->protocol eq 'mysql';
 
+  $url->options->{utf8} = 1 unless exists $url->options->{utf8};
+  $url->options->{found_rows} = 1 unless exists $url->options->{found_rows};
+
   return $self->url($url);
 }
 

@@ -19,8 +19,7 @@ WriteMakefile(
 }
 ,
   PREREQ_PM => {
-  'Mojolicious' => '6.0',
-  'perl' => '5.010001'
+  'Mojolicious' => '6.0'
 }
 ,
   test => { TESTS => 't/*.t' },
