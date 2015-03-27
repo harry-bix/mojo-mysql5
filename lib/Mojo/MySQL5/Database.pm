@@ -30,10 +30,14 @@ sub begin {
 }
 
 sub connect {
-  my ($self, $url) = @_;
-  my $c = Mojo::MySQL5::Connection->new(url => $url);
-  eval { $c->connect };
-  croak "Unable to connect to '$url' $@" if $@;
+  my $self = shift;
+  my $c = Mojo::MySQL5::Connection->new(url => $self->mysql->url);
+  $c->on(error => sub {
+    my ($c, $err) = @_;
+    warn 'Unable to connect to "', $self->mysql->url, '" ', $err, "\n";
+  });
+  $c->connect();
+  $c->unsubscribe('error');
   return $self->connection($c);
 }
 
@@ -136,8 +140,7 @@ Mojo::MySQL5::Database - Database
 
 =head1 DESCRIPTION
 
-L<Mojo::MySQL5::Database> is a container for L<connections|Mojo::MySQL5::Connection> used by L<Mojo::MySQL5>.
-L<Mojo::MySQL5::Database> is based on L<Mojo::MySQL5::Database>.
+L<Mojo::MySQL5::Database> is a container for L<Mojo::MySQL5::Connection> handles used by L<Mojo::MySQL5>.
 
 =head1 ATTRIBUTES
 
@@ -156,7 +159,7 @@ L<Mojo::MySQL5> object this database belongs to.
 
 =head1 METHODS
 
-L<Mojo::MySQL5::Database> inherits all methods from L<Mojo::MySQL5::Database> and
+L<Mojo::MySQL5::Database> inherits all methods from L<Mojo::EventEmitter> and
 implements the following ones.
 
 =head2 backlog
@@ -173,14 +176,18 @@ Begin transaction and return L<Mojo::MySQL5::Transaction> object, which will
 automatically roll back the transaction unless
 L<Mojo::MySQL5::Transaction/"commit"> bas been called before it is destroyed.
 
-  my $tx = $db->begin;
-  $db->query('insert into names values (?)', 'Baerbel');
-  $db->query('insert into names values (?)', 'Wolfgang');
-  $tx->commit;
+  # Insert rows in a transaction
+  eval {
+    my $tx = $db->begin;
+    $db->query('insert into frameworks values (?)', 'Catalyst');
+    $db->query('insert into frameworks values (?)', 'Mojolicious');
+    $tx->commit;
+  };
+  say $@ if $@;
 
 =head2 connect
 
-  $db->connect(Mojo::MySQL5::URL->new('mysql://user:password@host/db'));
+  $db->connect;
 
 Connect to MySQL server.
 

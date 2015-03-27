@@ -521,7 +521,6 @@ sub connect {
   );
 
   $self->_ioloop(0)->start unless $cb;
-  die $self->{error_message} if $self->{error_code};
 }
 
 sub disconnect { shift->_cmd('disconnect') }

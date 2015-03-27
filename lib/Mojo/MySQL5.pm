@@ -27,7 +27,8 @@ sub db {
   my $db = Mojo::MySQL5::Database->new(connection => $c, mysql => $self);
 
   if (!$c) {
-    $db->connect($self->url);
+    $db->connect;
+    croak 'connect failed' unless $db->connection->_state eq 'idle';
     $self->emit(connection => $db);
   }
   return $db;

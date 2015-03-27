@@ -11,7 +11,7 @@ WriteMakefile(
     resources => {
       bugtracker => 'https://github.com/harry-bix/mojo-mysql5/issues',
       homepage => 'https://github.com/harry-bix/mojo-mysql5',
-      repository => 'https://github.com///github.com/harry-bix/mojo-MySQL5.git',
+      repository => 'https://github.com/harry-bix/mojo-MySQL5.git',
     },
   },
   BUILD_REQUIRES => {
@@ -19,7 +19,8 @@ WriteMakefile(
 }
 ,
   PREREQ_PM => {
-  'Mojolicious' => '6.0'
+  'Mojolicious' => '6.0',
+  'perl' => '5.010001'
 }
 ,
   test => { TESTS => 't/*.t' },
