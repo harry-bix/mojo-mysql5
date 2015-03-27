@@ -4,7 +4,7 @@ use Mojo::Base 'Mojo::EventEmitter';
 use Mojo::MySQL5::Connection;
 use Mojo::MySQL5::Results;
 use Mojo::MySQL5::Transaction;
-use Mojo::MySQL5::Util 'expand_sql';
+use Encode '_utf8_off';
 use Scalar::Util 'weaken';
 use Carp 'croak';
 
@@ -50,17 +50,41 @@ sub ping { shift->connection->ping }
 sub query {
   my $self = shift;
   my $cb = ref $_[-1] eq 'CODE' ? pop : undef;
-  my $sql = expand_sql(@_);
+  my $sql = shift;
+  my $expand_sql = '';
+
+  _utf8_off $sql;
+
+  while (length($sql) > 0) {
+    my $token;
+    if ($sql =~ /^(\s+)/s                                   # whitespace
+      or $sql =~ /^(\w+)/) {                                # general name
+      $token = $1;
+    }
+    elsif ($sql =~ /^--.*(?:\n|\z)/p                        # double-dash comment
+      or $sql =~ /^\#.*(?:\n|\z)/p                          # hash comment
+      or $sql =~ /^\/\*(?:[^\*]|\*[^\/])*(?:\*\/|\*\z|\z)/p # C-style comment
+      or $sql =~ /^'(?:[^'\\]*|\\(?:.|\n)|'')*(?:'|\z)/p    # single-quoted literal text
+      or $sql =~ /^"(?:[^"\\]*|\\(?:.|\n)|"")*(?:"|\z)/p    # double-quoted literal text
+      or $sql =~ /^`(?:[^`]*|``)*(?:`|\z)/p) {              # schema-quoted literal text
+      $token = ${^MATCH};
+    }
+    else {
+      $token = substr($sql, 0, 1);
+    }
+    $expand_sql .= $token eq '?' ? Mojo::MySQL5::Util::quote(shift) : $token;
+    substr($sql, 0, length($token), '');
+  }
 
   croak 'async query in flight' if $self->backlog and !$cb;
   $self->_subscribe unless $self->backlog;
 
-  push @{$self->{waiting}}, { cb => $cb, sql => $sql, count => 0, started => 0,
+  push @{$self->{waiting}}, { cb => $cb, sql => $expand_sql, count => 0, started => 0,
     results => Mojo::MySQL5::Results->new };
 
   # Blocking
   unless ($cb) {
-    $self->connection->query($sql);
+    $self->connection->query($expand_sql);
     $self->_unsubscribe;
     my $current = shift @{$self->{waiting}};
     croak $self->connection->{error_message} if $self->connection->{error_code};

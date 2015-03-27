@@ -4,38 +4,7 @@ use Mojo::Base -strict;
 use Mojo::URL;
 use Exporter 'import';
 
-our @EXPORT_OK = qw(expand_sql flag_list flag_set flag_is quote quote_id);
-
-# from Net::Wire10
-my $split_sql = qr/
-  # capture each part, which is either:
-  (
-    # small comment in double-dash or
-    --[[:cntrl:]\ ].*(?:\n|\z) |
-    # small comment in hash or
-    \#.*(?:\n|\z) |
-    # big comment in C-style or version-conditional code or
-    \/\*(?:[^\*]|\*[^\/])*(?:\*\/|\*\z|\z) |
-    # whitespace
-    [\ \r\n\013\t\f]+ |
-    # single-quoted literal text or
-    '(?:[^'\\]*|\\(?:.|\n)|'')*(?:'|\z) |
-    # double-quoted literal text or
-    "(?:[^"\\]*|\\(?:.|\n)|"")*(?:"|\z) |
-    # schema-quoted literal text or
-    `(?:[^`]*|``)*(?:`|\z) |
-    # else it is either sql speak or
-    (?:[^'"`\?\ \r\n\013\t\f\#\-\/]|\/[^\*]|-[^-]|--(?=[^[:cntrl:]\ ]))+ |
-    # bingo: a ? placeholder
-    \?
-  )
-/x;
-
-sub expand_sql {
-  my ($sql, @args) = @_;
-  my @sql = $sql =~ m/$split_sql/g;
-  return join('', map { $_ eq '?' ? quote(shift @args) : $_ } @sql);
-}
+our @EXPORT_OK = qw(flag_list flag_set flag_is quote quote_id);
 
 # Flag functions
 
