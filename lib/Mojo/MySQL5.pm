@@ -213,10 +213,6 @@ C<5>.
 
 =head2 migrations
 
-MySQL does not support nested transactions and DDL transactions.
-DDL statements cause implicit C<COMMIT>.
-B<Therefore, migrations should be used with extreme caution.> 
-
   my $migrations = $mysql->migrations;
   $mysql         = $mysql->migrations(Mojo::MySQL5::Migrations->new);
 
@@ -225,6 +221,10 @@ easily.
 
   # Load migrations from file and migrate to latest version
   $mysql->migrations->from_file('/home/sri/migrations.sql')->migrate;
+
+MySQL does not support nested transactions and DDL transactions.
+DDL statements cause implicit C<COMMIT>.
+Not everything will be rolled-back if migration script fails.
 
 =head2 url
 
