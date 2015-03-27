@@ -554,8 +554,9 @@ Mojo::MySQL5::Connection - TCP connection to MySQL Server
   use Mojo::MySQL5::Conection;
 
   my $c = Mojo::MySQL5::Conection->new(
-    url => 'mysql://test:password@127.0.0.1:3306/test',
-    options => { found_rows => 1, connect_timeout => 2 });
+    url => Mojo::MySQL5->new(
+      'mysql://test:password@127.0.0.1:3306/test?found_rows=1&connect_timeout=2')
+  );
 
   Mojo::IOLoop->delay(
     sub {
