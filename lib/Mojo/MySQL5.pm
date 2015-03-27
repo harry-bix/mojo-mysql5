@@ -223,8 +223,8 @@ easily.
   $mysql->migrations->from_file('/home/sri/migrations.sql')->migrate;
 
 MySQL does not support nested transactions and DDL transactions.
-DDL statements cause implicit C<COMMIT>.
-Not everything will be rolled-back if migration script fails.
+DDL statements cause implicit C<COMMIT>. C<ROLLBACK> will be called if
+migration script fails, but not everything will be reverted.
 
 =head2 url
 
