@@ -1,5 +1,9 @@
 Revision history for Mojo::MySQL5
 
+0.03
+       * Corrected pod
+       * Fixed error handling on connect failure
+
 0.02     Tue Mar 24 13:12:49 2015
        * blog example from Mojo::Pg
        * Improved Mojo::mysql::Migrations to make no changes to the database when
