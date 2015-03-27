@@ -72,7 +72,7 @@ sub query {
     else {
       $token = substr($sql, 0, 1);
     }
-    $expand_sql .= $token eq '?' ? Mojo::MySQL5::Util::quote(shift) : $token;
+    $expand_sql .= $token eq '?' ? $self->quote(shift) : $token;
     substr($sql, 0, length($token), '');
   }
 
@@ -94,6 +94,31 @@ sub query {
   # Non-blocking
   $self->_next;
 }
+
+sub quote {
+  my ($self, $string) = @_;
+  return 'NULL' unless defined $string;
+
+  for ($string) {
+    s/\\/\\\\/g;
+    s/\0/\\0/g;
+    s/\n/\\n/g;
+    s/\r/\\r/g;
+    s/'/\\'/g;
+    # s/"/\\"/g;
+    s/\x1a/\\Z/g;
+  }
+
+  return "'$string'";
+}
+
+sub quote_id {
+  my ($self, $id) = @_;
+  return 'NULL' unless defined $id;
+  $id =~ s/`/``/g;
+  return "`$id`";
+}
+
 
 sub _next {
   my $self = shift;
@@ -246,6 +271,18 @@ results. You can also append a callback to perform operation non-blocking.
     ...
   });
   Mojo::IOLoop->start unless Mojo::IOLoop->is_running;
+
+=head2 quote
+ 
+  my $escaped = $db->quote($str);
+ 
+Quote string value for passing to SQL query.
+ 
+=head2 quote_id
+ 
+  my $escaped = $db->quote_id($id);
+ 
+Quote identifier for passing to SQL query.
 
 =head1 SEE ALSO
 
