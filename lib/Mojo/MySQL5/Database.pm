@@ -185,7 +185,9 @@ Mojo::MySQL5::Database - Database
 
   use Mojo::MySQL5::Database;
 
-  my $db = Mojo::MySQL5::Database->new(mysql => $mysql, connection => Mojo::MySQL5::Connection->new);
+  my $db = Mojo::MySQL5::Database->new(
+    mysql => $mysql,
+    connection => Mojo::MySQL5::Connection->new);
 
 =head1 DESCRIPTION
 

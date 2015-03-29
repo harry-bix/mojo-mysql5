@@ -567,7 +567,6 @@ sub _flag_is($$$) {
   return undef;
 }
 
-
 1;
 
 =encoding utf8
