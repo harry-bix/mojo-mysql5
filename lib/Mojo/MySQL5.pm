@@ -15,7 +15,7 @@ has migrations      => sub {
 };
 has url             => sub { Mojo::MySQL5::URL->new('mysql:///test') };
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 sub db {
   my $self = shift;

@@ -115,10 +115,6 @@ ATTRIBUTES
     defaults to 5.
 
   migrations
-    MySQL does not support nested transactions and DDL transactions. DDL
-    statements cause implicit "COMMIT". Therefore, migrations should be used
-    with extreme caution.
-
       my $migrations = $mysql->migrations;
       $mysql         = $mysql->migrations(Mojo::MySQL5::Migrations->new);
 
@@ -127,6 +123,10 @@ ATTRIBUTES
 
       # Load migrations from file and migrate to latest version
       $mysql->migrations->from_file('/home/sri/migrations.sql')->migrate;
+
+    MySQL does not support nested transactions and DDL transactions. DDL
+    statements cause implicit "COMMIT". "ROLLBACK" will be called if
+    migration script fails, but not everything will be reverted.
 
   url
       my $url = $mysql->url;
@@ -214,8 +214,6 @@ REFERENCE
     * Mojo::MySQL5::Transaction
 
     * Mojo::MySQL5::URL
-
-    * Mojo::MySQL5::Util
 
 AUTHOR
     Jan Henning Thorsen, "jhthorsen@cpan.org".

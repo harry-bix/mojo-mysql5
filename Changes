@@ -1,6 +1,6 @@
 Revision history for Mojo::MySQL5
 
-0.03
+0.03     Sun Mar 29 18:26:17 2015
        * Corrected POD
        * Fixed error handling on connect failure
        * Fixed Mojo::MySQL5::Migrations to allow delimiter in comments and quoted strings
