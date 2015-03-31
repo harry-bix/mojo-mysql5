@@ -6,8 +6,9 @@ use Encode qw(_utf8_off _utf8_on);
 use Digest::SHA qw(sha1);
 use Scalar::Util 'weaken';
 use Mojo::IOLoop;
+use Mojo::MySQL5::URL;
 
-has 'url';
+has url => sub { Mojo::MySQL5::URL->new('mysql:///') };
 
 has _state => 'disconnected';
 
