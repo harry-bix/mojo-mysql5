@@ -64,7 +64,7 @@ sub dsn {
  
 =head1 NAME
  
-Mojo::MySQL5::URL - MySQL Connection URL
+Mojo::MySQL5::URL - Connection URL
  
 =head1 SYNOPSIS
  
