@@ -1,5 +1,11 @@
 Revision history for Mojo::MySQL5
 
+0.04
+       * Fixed bug in Mojo::Pg::Migrations where the latest version could not always
+         be determined correctly. (Hernan Lopes)
+       * Updated blog example application from Mojo::Pg
+       * Packet encoding-decoding tests
+
 0.03     Sun Mar 29 18:26:17 2015
        * Corrected POD
        * Fixed error handling on connect failure
