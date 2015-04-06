@@ -1,7 +1,11 @@
 Revision history for Mojo::MySQL5
 
+0.05     Mon Apr  6 03:29:29 2015
+       * Fixed bug in Mojo::MySQL5::Migrations where migrations would sometimes be
+         executed in the wrong order.
+
 0.04     Sun Apr  5 23:34:33 2015
-       * Fixed bug in Mojo::Pg::Migrations where the latest version could not always
+       * Fixed bug in Mojo::MySQL5::Migrations where the latest version could not always
          be determined correctly. (Hernan Lopes)
        * Updated blog example application from Mojo::Pg
        * Packet encoding-decoding tests
