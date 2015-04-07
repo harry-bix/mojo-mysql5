@@ -37,7 +37,8 @@ sub db {
 sub from_string {
   my ($self, $str) = @_;
   my $url = Mojo::MySQL5::URL->new($str);
-  croak qq{Invalid MySQL connection string "$str"} unless $url->protocol eq 'mysql';
+  croak qq{Invalid MySQL connection string "$str"}
+    unless $url->protocol eq 'mysql' or $url->protocol eq 'mysql5';
 
   $url->options->{utf8} = 1 unless exists $url->options->{utf8};
   $url->options->{found_rows} = 1 unless exists $url->options->{found_rows};
