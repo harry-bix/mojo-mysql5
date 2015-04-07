@@ -42,7 +42,7 @@ foreach my $t (0x10000, 0x100000, 0xFFFFFF) {
 foreach my $t (0x1000000, 17000000, 5000000000) {
   $c->{incoming} = Mojo::MySQL5::Connection::_encode_lcint($t);
   is length($c->{incoming}), 9, '9byte length';
-  is $c->{incoming}, pack('CQ<', 254, $t), '9byte _encode_lcint';
+  is $c->{incoming}, pack('CVV', 254, $t, $t >> 32), '9byte _encode_lcint';
   is $c->_get_int(1), 254, '9byte header';
   is $c->_chew_lcint, $t, '9byte _chew_lcint';
   is $c->{incoming}, '', '9byte empty after chew';
