@@ -82,7 +82,7 @@ use constant SEQ => {
 sub _encode_int($$) {
   my ($int, $len) = @_;
   return substr pack('V', $int), 0, $len if $len >= 1 and $len <= 4;
-  return substr pack('VV', $int, $int >> 32), 0, $len if $len == 6 or $len = 8;
+  return substr pack('VV', int $int % 2 ** 32, int $int / 2 ** 32), 0, $len if $len == 6 or $len = 8;
   return undef;
 }
 
@@ -94,7 +94,7 @@ sub _encode_lcint($) {
     $int <= 250 ? pack 'C', $int :
     $int <= 0xffff ? pack 'Cv', 252, $int :
     $int <= 0xffffff ? substr pack('CV', 253, $int), 0, 4 :
-    pack 'CVV', 254, $int, $int >> 32;
+    pack 'CVV', 254, int $int % 2 ** 32, int $int / 2 ** 32;
 }
 
 # encode length coded string
@@ -109,7 +109,11 @@ sub _get_int {
   my $data = $chew ? substr $self->{incoming}, 0, $len, '' : substr $self->{incoming}, 0, $len;
   return unpack 'C', $data if $len == 1;
   return unpack 'V', $data . "\0\0" if $len >= 2 and $len <= 4;
-  return unpack ('V', substr $data, 0, 4) | unpack('V', substr $data, 4, 4) << 32 if $len == 8;
+  return undef unless $len == 8;
+  my $lo = unpack ('V', substr $data, 0, 4);
+  my $hi = unpack('V', substr $data, 4, 4);
+  return $hi ?
+    int $lo + int $hi * 2 ** 32 : $lo;
 }
 
 sub _chew_int { shift->_get_int(shift, 1) }
