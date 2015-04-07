@@ -1,5 +1,9 @@
 Revision history for Mojo::MySQL5
 
+0.06     Tue Apr  7 14:35:48 2015
+       * Fixed bug in Mojo::MySQL5::Connection to encode and decode big integers
+         on 32-bit platforms
+
 0.05     Mon Apr  6 03:29:29 2015
        * Fixed bug in Mojo::MySQL5::Migrations where migrations would sometimes be
          executed in the wrong order.
