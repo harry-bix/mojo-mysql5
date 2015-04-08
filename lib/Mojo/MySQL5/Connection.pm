@@ -8,9 +8,9 @@ use Scalar::Util 'weaken';
 use Mojo::IOLoop;
 use Mojo::MySQL5::URL;
 
-has url => sub { Mojo::MySQL5::URL->new('mysql:///') };
-
 has state => 'disconnected';
+
+has url => sub { Mojo::MySQL5::URL->new('mysql:///') };
 
 use constant DEBUG => $ENV{MOJO_MYSQL_DEBUG} // 0;
 
@@ -55,6 +55,8 @@ use constant {
   REV_DATATYPE => { map { chr(DATATYPE->{$_}) => $_ } keys %{DATATYPE()} },
 };
 
+# state machine
+# doing => { state => '_op', state => '_op' }
 use constant SEQ => {
   connect => {
     connected => '_recv_handshake',
@@ -669,21 +671,25 @@ Possible States are:
 =item disconnected
 
   Initial state before connecting to server.
+
   Same state after fatal erorr.
 
 =item connected
 
   Connection to server is established.
+
   Next wait for C<Initial Handshake> packet.
 
 =item handshake
 
-  Server responded with initial handshake.
+  Server responded with C<Initial Handshake>.
+
   Next send C<Handshake Response> (authentication) packet.
 
 =item auth
 
   C<Handshake Response> (authentication) packet sent to server.
+
   Next wait for C<OK> or C<Error> packet.
 
 =item idle
@@ -693,6 +699,7 @@ Possible States are:
 =item query
 
   C<COM_QUERY> packet sent to server.
+
   Waiting for C<COM_QUERY Response> packet. C<OK> is expected for non-SELECT queries.
 
 =item field
@@ -706,6 +713,7 @@ Possible States are:
 =item ping
 
   C<COM_PING> packet is sent to server.
+
   Waitint for C<OK> packet.
 
 =back
@@ -809,6 +817,8 @@ the terms of the Artistic License version 2.0.
 
 =head1 SEE ALSO
 
-L<Mojo::MySQL5>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+L<http://dev.mysql.com/doc/internals/en/client-server-protocol.html>,
+
+L<Mojo::MySQL5>.
 
 =cut
