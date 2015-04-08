@@ -1,5 +1,10 @@
 Revision history for Mojo::MySQL5
 
+0.07     Wed Apr  8 14:51:52 2015
+       * Public attribute Mojo::MySQL5::Connection state
+       * Fixed bug in Mojo::MySQL5::Connection where connection cannot be reused
+         after error received not immediately after query
+
 0.06     Tue Apr  7 14:35:48 2015
        * Fixed bug in Mojo::MySQL5::Connection to encode and decode big integers
          on 32-bit platforms
