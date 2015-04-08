@@ -39,9 +39,10 @@ foreach my $t (0x10000, 0x100000, 0xFFFFFF) {
   is $c->{incoming}, '', 'empty after chew';
 }
 
-foreach my $t (0x1000000, 17000000, 5000000000) {
+foreach my $t (0x1000000, 17000000, 5000000000, 50000000005) {
   $c->{incoming} = Mojo::MySQL5::Connection::_encode_lcint($t);
   is length($c->{incoming}), 9, '9byte length';
+#  is $c->{incoming}, pack('CQ<', 254, $t), '9byte _encode_lcint';
   is $c->{incoming}, pack('CVV', 254, int $t % 2 ** 32, int $t / 2 ** 32), '9byte _encode_lcint';
   is $c->_get_int(1), 254, '9byte header';
   is $c->_chew_lcint, $t, '9byte _chew_lcint';
@@ -59,7 +60,7 @@ foreach my $t (undef, '', 'X' x 10, 'X' x 300, 'X' x 100000, 'X' x 17000000) {
 }
 
 
-is $c->_state, 'disconnected', 'state disconnected';
+is $c->state, 'disconnected', 'state disconnected';
 $c->{seq} = 0;
 
 $c->{incoming} = pack('CZ*Va8xvCvvCx10a12xZ*',
@@ -73,7 +74,7 @@ is $c->{auth_plugin_data}, '12345678ABCDEFGHIJKL', 'auth_plugin_data';
 is $c->{capability_flags}, 0xFFFFF, 'capability_flags';
 is $c->{character_set}, 33, 'character_set';
 is $c->{status_flags}, 0, 'status_flags';
-is $c->_state, 'handshake', 'state handshake';
+is $c->state, 'handshake', 'state handshake';
 
 $c->{incoming} = pack('CCCvv', 0, 1, 2, 3, 4);
 $c->_recv_ok;
@@ -82,12 +83,12 @@ is $c->{affected_rows}, 1, 'affected_rows';
 is $c->{last_insert_id}, 2, 'last_insert_id';
 is $c->{status_flags}, 3, 'status_flags';
 is $c->{warnings_count}, 4, 'warnings_count';
-is $c->_state, 'idle', 'state idle';
+is $c->state, 'idle', 'state idle';
 
 my ($error, @fields, @result);
 my $result_count = 0;
 
-$c->_state('query');
+$c->state('query');
 $c->on(error => sub {
   my ($c, $err) = @_;
   $error = $err;
@@ -108,7 +109,7 @@ is $c->{incoming}, '', 'empty after recv';
 is $c->{error_code}, 100, 'error';
 is $c->{sql_state}, 'S0000', 'sql_state';
 is $c->{error_message}, 'stupid error', 'error_message';
-is $c->_state, 'idle', 'state idle on error';
+is $c->state, 'idle', 'state idle on error';
 
 $c->_reset;
 
@@ -116,7 +117,7 @@ $c->{incoming} = pack('C', 1);
 $c->_recv_query_responce;
 is $c->{incoming}, '', 'empty after recv';
 is $c->{field_count}, 1, 'field_count';
-is $c->_state, 'field', 'state field';
+is $c->state, 'field', 'state field';
 
 $c->{incoming} = pack('Ca*Ca*Ca*Ca*Ca*Ca*CvVCvCx2',
   7, 'catalog', 6, 'schema', 5, 'table', 9, 'org_table', 4, 'name', 8, 'org_name', 0x0c,
@@ -124,7 +125,7 @@ $c->{incoming} = pack('Ca*Ca*Ca*Ca*Ca*Ca*CvVCvCx2',
 $c->_recv_field;
 is $c->{incoming}, '', 'empty after recv';
 
-is $c->_state, 'field', 'state field';
+is $c->state, 'field', 'state field';
 is $result_count, 0, 'result_count';
 
 $c->{incoming} = pack('Cvv', 254, 10, 11);
@@ -133,7 +134,7 @@ is $c->{incoming}, '', 'empty after recv';
 is $c->{warnings_count}, 10, 'warnings_count';
 is $c->{status_flags}, 11, 'status_flags';
 is $result_count, 1, 'result_count';
-is $c->_state, 'result', 'state field';
+is $c->state, 'result', 'state field';
 
 is_deeply \@fields, [[
   {
@@ -165,9 +166,9 @@ $c->_recv_row; # actualy _recv_eof
 is $c->{incoming}, '', 'empty after recv';
 
 is_deeply \@result, [ ['row 1'], ['row 2'] ], 'rows';
-is $c->_state, 'idle', 'state idle';
+is $c->state, 'idle', 'state idle';
 
 
-$c->_state('disconnected');
+$c->state('disconnected');
 
 done_testing();

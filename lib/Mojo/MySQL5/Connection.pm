@@ -10,7 +10,7 @@ use Mojo::MySQL5::URL;
 
 has url => sub { Mojo::MySQL5::URL->new('mysql:///') };
 
-has _state => 'disconnected';
+has state => 'disconnected';
 
 use constant DEBUG => $ENV{MOJO_MYSQL_DEBUG} // 0;
 
@@ -166,7 +166,7 @@ sub _send_auth {
   push @flags, 'FOUND_ROWS' if $self->url->options->{found_rows};
   my $flags = _flag_set(CLIENT_CAPABILITY, @flags);
 
-  warn '>>> AUTH ', $self->{connection_id}, ' #', $self->{seq}, ' state:', $self->_state, "\n",
+  warn '>>> AUTH ', $self->{connection_id}, ' #', $self->{seq}, ' state:', $self->state, "\n",
     ' user:', $username, ' database:', $database,
     ' flags:', _flag_list(CLIENT_CAPABILITY, $flags),
     '(', sprintf('%08X', $flags), ')', "\n" if DEBUG > 1;
@@ -179,7 +179,7 @@ sub _send_auth {
     $crypt = $crypt1 ^ $crypt2;
   }
 
-  $self->_state('auth');
+  $self->state('auth');
   delete $self->{auth_plugin_data};
   return pack 'VVCx23Z*a*Z*',
     $flags, 131072, ($self->url->options->{utf8} // 1) ? CHARSET->{UTF8} : CHARSET->{BINARY},
@@ -188,25 +188,25 @@ sub _send_auth {
 
 sub _send_quit {
   my $self = shift;
-  warn '>>> QUIT ', $self->{connection_id}, ' #', $self->{seq}, ' state:', $self->_state, "\n" if DEBUG > 1;
-  $self->_state('quit');
+  warn '>>> QUIT ', $self->{connection_id}, ' #', $self->{seq}, ' state:', $self->state, "\n" if DEBUG > 1;
+  $self->state('quit');
   return pack 'C', 1;
 }
 
 sub _send_query {
   my $self = shift;
   my $sql = $self->{sql};
-  warn '>>> QUERY ', $self->{connection_id}, ' #', $self->{seq}, ' state:', $self->_state, "\n",
+  warn '>>> QUERY ', $self->{connection_id}, ' #', $self->{seq}, ' state:', $self->state, "\n",
     " sql:$sql\n" if DEBUG > 1;
   _utf8_off $sql;
-  $self->_state('query');
+  $self->state('query');
   return pack('C', 3) . $sql;
 }
 
 sub _send_ping {
   my $self = shift;
-  warn '>>> PING ', $self->{connection_id}, ' #', $self->{seq}, ' state:', $self->_state, "\n" if DEBUG > 1;
-  $self->_state('ping');
+  warn '>>> PING ', $self->{connection_id}, ' #', $self->{seq}, ' state:', $self->state, "\n" if DEBUG > 1;
+  $self->state('ping');
   return pack 'C', 14;
 }
 
@@ -220,12 +220,12 @@ sub _recv_error {
   $self->{sql_state} = $self->_chew_str(5);
   $self->{error_message} = $self->_chew_zstr;
 
-  warn '<<< ERROR ', $self->{connection_id}, ' #', $self->{seq}, ' state:', $self->_state, "\n",
+  warn '<<< ERROR ', $self->{connection_id}, ' #', $self->{seq}, ' state:', $self->state, "\n",
     ' error:', $self->{error_code},
     ' state:', $self->{sql_state},
     ' message:', $self->{error_message}, "\n" if DEBUG > 1;
 
-  $self->_state($self->_state eq 'query' ? 'idle' : 'error');
+  $self->state('idle');
   $self->emit(error => $self->{error_message});
 }
 
@@ -242,16 +242,16 @@ sub _recv_ok {
   $self->{warnings_count} = $self->_chew_int(2);
   $self->{field_count} = 0;
 
-  warn '<<< OK ', $self->{connection_id}, ' #', $self->{seq}, ' state:', $self->_state, "\n",
+  warn '<<< OK ', $self->{connection_id}, ' #', $self->{seq}, ' state:', $self->state, "\n",
     ' affected:', $self->{affected_rows},
     ' last_insert_id:', $self->{last_insert_id},
     ' status:', _flag_list(SERVER_STATUS, $self->{status_flags}),
     '(', sprintf('%04X', $self->{status_flags}), ')',
     ' warnings:', $self->{warnings_count}, "\n" if DEBUG > 1;
 
-  $self->emit('connect') if $self->_state eq 'auth';
-  $self->emit('end') if $self->_state eq 'query';
-  $self->_state('idle');
+  $self->emit('connect') if $self->state eq 'auth';
+  $self->emit('end') if $self->state eq 'query';
+  $self->state('idle');
 }
 
 sub _recv_query_responce {
@@ -262,10 +262,10 @@ sub _recv_query_responce {
 
   $self->{field_count} = $self->_chew_lcint;
 
-  warn '<<< QUERY_RESPONSE ', $self->{connection_id}, ' #', $self->{seq}, ' state:', $self->_state, "\n",
+  warn '<<< QUERY_RESPONSE ', $self->{connection_id}, ' #', $self->{seq}, ' state:', $self->state, "\n",
     ' fields:', $self->{field_count}, "\n" if DEBUG > 1;
 
-  $self->_state('field');
+  $self->state('field');
 }
 
 sub _recv_eof {
@@ -278,24 +278,24 @@ sub _recv_eof {
   $self->{warnings_count} = $self->_chew_int(2);
   $self->{status_flags} = $self->_chew_int(2);
 
-  warn '<<< EOF ', $self->{connection_id}, ' #', $self->{seq}, ' state:', $self->_state, "\n",
+  warn '<<< EOF ', $self->{connection_id}, ' #', $self->{seq}, ' state:', $self->state, "\n",
     ' warnings:', $self->{warnings_count},
     ' status:', _flag_list(SERVER_STATUS, $self->{status_flags}),
     '(', sprintf('%04X', $self->{status_flags}), ')', "\n" if DEBUG > 1;
 
-  if ($self->_state eq 'field') {
+  if ($self->state eq 'field') {
     $self->emit(fields => $self->{column_info});
-    $self->_state('result');
+    $self->state('result');
   }
-  elsif ($self->_state eq 'result') {
+  elsif ($self->state eq 'result') {
     $self->{column_info} = [];
     if ($self->{status_flags} & 0x0008) {
       # MORE_RESULTS
-      $self->_state('query');
+      $self->state('query');
     }
     else {
       $self->emit(end => undef);
-      $self->_state('idle');
+      $self->state('idle');
     }
   }
 }
@@ -327,7 +327,7 @@ sub _recv_field {
 
   push @{$self->{column_info}}, $field;
 
-  warn '<<< FIELD ', $self->{connection_id}, ' #', $self->{seq}, ' state:', $self->_state, "\n",
+  warn '<<< FIELD ', $self->{connection_id}, ' #', $self->{seq}, ' state:', $self->state, "\n",
     ' name:', $field->{name},
     ' type:', REV_DATATYPE->{chr $field->{column_type}}, '(', $field->{column_type}, ')',
     ' length:', $field->{column_length},
@@ -348,7 +348,7 @@ sub _recv_row {
       if $self->{column_info}->[$_]->{character_set} == CHARSET->{UTF8};
   }
 
-  warn '<<< ROW ', $self->{connection_id}, ' #', $self->{seq}, ' state:', $self->_state, "\n",
+  warn '<<< ROW ', $self->{connection_id}, ' #', $self->{seq}, ' state:', $self->state, "\n",
     join(', ', map { defined $_ ? "'" . $_ . "'" : 'null' } @row), "\n" if DEBUG > 1;
 
   $self->emit(result => \@row);
@@ -374,7 +374,7 @@ sub _recv_handshake {
   $self->_chew_str(1);
   my $auth_plugin_name = $self->_chew_zstr;
 
-  warn '<<< HANDSHAKE ', $self->{connection_id}, ' #', $self->{seq}, ' state:', $self->_state, "\n",
+  warn '<<< HANDSHAKE ', $self->{connection_id}, ' #', $self->{seq}, ' state:', $self->state, "\n",
     ' protocol:', $self->{protocol_version},
     ' version:', $self->{server_version},
     ' connection:', $self->{connection_id},
@@ -391,7 +391,7 @@ sub _recv_handshake {
   die '_recv_handshake() invalid auth data '
     unless $auth_len == 21 and length($self->{auth_plugin_data}) == 20;
 
-  $self->_state('handshake');
+  $self->state('handshake');
 }
 
 sub _reset {
@@ -417,8 +417,8 @@ sub _seq_next_ready {
 
 sub _seq_next {
   my ($self, $cmd, $writeonly) = @_;
-  my $next = SEQ->{$cmd}{$self->_state};
-  warn 'stream state:', $self->_state, ' doing:', $cmd, ' next:', ($next // ''), "\n" if DEBUG > 2;
+  my $next = SEQ->{$cmd}{$self->state};
+  warn 'stream state:', $self->state, ' doing:', $cmd, ' next:', ($next // ''), "\n" if DEBUG > 2;
   return unless $next;
   if (substr($next, 0, 6) eq '_send_') {
     my $packet = $self->$next();
@@ -453,7 +453,7 @@ sub _seq {
 
     $self->_seq_next($cmd, 0) while $self->_seq_next_ready;
 
-    if ($self->_state eq 'idle' or $self->_state eq 'error') {
+    if ($self->state eq 'idle') {
       $stream->steal_handle;
       delete $self->{stream};
       $cb ? $self->$cb() : $self->_ioloop(0)->stop;
@@ -464,17 +464,17 @@ sub _seq {
   });
   $self->{stream}->on(error => sub {
     my ($stream, $err) = @_;
-    warn "stream error: $err\n" if DEBUG;
+    warn "stream error: $err state:", $self->state, "\n" if DEBUG;
     $self->{error_message} //= $err;
     $self->emit(error => $err);
   });
   $self->{stream}->on(timeout => sub {
-    warn "stream timeout\n" if DEBUG;
+    warn "stream timeout state:", $self->state, "\n" if DEBUG;
     $self->{error_message} //= 'timeout';
   });
   $self->{stream}->on(close => sub {
     $self->{socket} = undef;
-    $self->_state('disconnected');
+    $self->state('disconnected');
     $cb ? $self->$cb() : $self->_ioloop(0)->stop;
   });
 
@@ -485,18 +485,18 @@ sub _seq {
 sub _cmd {
   my ($self, $cmd, $cb) = @_;
   die 'invalid cmd:' . $cmd unless exists SEQ->{$cmd};
-  die 'invalid state:' . $self->_state . ' doing:'. $cmd unless exists SEQ->{$cmd}{$self->_state};
+  die 'invalid state:' . $self->state . ' doing:'. $cmd unless exists SEQ->{$cmd}{$self->state};
 
   $self->_reset;
   $self->_seq($cmd, $cb);
   $self->_ioloop(0)->start unless $cb;
-  return $self->_state eq 'idle' ? 1 : 0;
+  return $self->state eq 'idle' ? 1 : 0;
 }
 
 sub connect {
   my ($self, $cb) = @_;
 
-  $self->_state('connecting');
+  $self->state('connecting');
   $self->_reset;
 
   $self->{client} = Mojo::IOLoop::Client->new;
@@ -507,13 +507,13 @@ sub connect {
     my ($client, $handle) = @_;
     delete $self->{client};
     $self->{socket} = $handle;
-    $self->_state('connected');
+    $self->state('connected');
     $self->_seq('connect', $cb);
   });
   $self->{client}->on(error => sub {
     my ($client, $err) = @_;
     delete $self->{client};
-    $self->_state('disconnected');
+    $self->state('disconnected');
     $self->emit(error => $err);
     $cb ? $self->$cb() : $self->_ioloop(0)->stop;
   });
@@ -531,7 +531,7 @@ sub disconnect { shift->_cmd('disconnect') }
 
 sub ping {
   my ($self, $cb) = @_;
-  return $self->_state eq 'disconnected' ? 0 : $self->_cmd('ping', $cb);
+  return $self->state eq 'disconnected' ? 0 : $self->_cmd('ping', $cb);
 }
 
 sub query {
@@ -542,7 +542,7 @@ sub query {
 
 sub DESTROY {
   my $self = shift;
-  $self->disconnect if $self->_state eq 'idle' and $self->{socket};
+  $self->disconnect if $self->state eq 'idle' and $self->{socket};
 }
 
 # Private util functions
@@ -654,6 +654,61 @@ Emited when Error is received.
 =head1 ATTRIBUTES
 
 L<Mojo::MySQL5::Conection> implements the following attributes.
+
+=head2 state
+
+  my $state = $c->state;
+  $c->state('disconnected');
+
+Connection State.
+
+Possible States are:
+
+=over 2
+
+=item disconnected
+
+  Initial state before connecting to server.
+  Same state after fatal erorr.
+
+=item connected
+
+  Connection to server is established.
+  Next wait for C<Initial Handshake> packet.
+
+=item handshake
+
+  Server responded with initial handshake.
+  Next send C<Handshake Response> (authentication) packet.
+
+=item auth
+
+  C<Handshake Response> (authentication) packet sent to server.
+  Next wait for C<OK> or C<Error> packet.
+
+=item idle
+
+  Connection is idle and ready for sending commands.
+
+=item query
+
+  C<COM_QUERY> packet sent to server.
+  Waiting for C<COM_QUERY Response> packet. C<OK> is expected for non-SELECT queries.
+
+=item field
+
+  Waiting for C<Column Definition> packets. C<EOF> is expected for end of column definition.
+
+=item result
+
+  Waiting for C<Text Resultset Row> packets. C<EOF> is expected for end of result rows.
+
+=item ping
+
+  C<COM_PING> packet is sent to server.
+  Waitint for C<OK> packet.
+
+=back
 
 =head2 url
 

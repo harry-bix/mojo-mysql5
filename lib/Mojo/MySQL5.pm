@@ -28,7 +28,7 @@ sub db {
 
   if (!$c) {
     $db->connect;
-    croak 'connect failed' unless $db->connection->_state eq 'idle';
+    croak 'connect failed' unless $db->connection->state eq 'idle';
     $self->emit(connection => $db);
   }
   return $db;
@@ -350,7 +350,7 @@ the terms of the Artistic License version 2.0.
 
 =head1 SEE ALSO
 
-L<https://github.com/harry-bix/mojo-mysql5>,
+L<https://github.com/harryl/mojo-mysql5>,
 
 L<Mojo::Pg> Async Connector for PostgreSQL using L<DBD::Pg>, L<https://github.com/kraih/mojo-pg>,
 
