@@ -670,51 +670,51 @@ Possible States are:
 
 =item disconnected
 
-  Initial state before connecting to server.
+Initial state before connecting to server.
 
-  Same state after fatal erorr.
+Same state after fatal erorr.
 
 =item connected
 
-  Connection to server is established.
+Connection to server is established.
 
-  Next wait for C<Initial Handshake> packet.
+Waiting for C<Initial Handshake> packet.
 
 =item handshake
 
-  Server responded with C<Initial Handshake>.
+Server responded with C<Initial Handshake>.
 
-  Next send C<Handshake Response> (authentication) packet.
+Next send C<Handshake Response> (authentication) packet.
 
 =item auth
 
-  C<Handshake Response> (authentication) packet sent to server.
+C<Handshake Response> (authentication) packet sent to server.
 
-  Next wait for C<OK> or C<Error> packet.
+Next wait for C<OK> or C<Error> packet.
 
 =item idle
 
-  Connection is idle and ready for sending commands.
+Connection is idle and ready for sending commands.
 
 =item query
 
-  C<COM_QUERY> packet sent to server.
+C<COM_QUERY> packet sent to server.
 
-  Waiting for C<COM_QUERY Response> packet. C<OK> is expected for non-SELECT queries.
+Waiting for C<COM_QUERY Response> packet. C<OK> is expected for non-SELECT queries.
 
 =item field
 
-  Waiting for C<Column Definition> packets. C<EOF> is expected for end of column definition.
+Waiting for C<Column Definition> packets. C<EOF> is expected for end of column definition.
 
 =item result
 
-  Waiting for C<Text Resultset Row> packets. C<EOF> is expected for end of result rows.
+Waiting for C<Text Resultset Row> packets. C<EOF> is expected for end of result rows.
 
 =item ping
 
-  C<COM_PING> packet is sent to server.
+C<COM_PING> packet is sent to server.
 
-  Waitint for C<OK> packet.
+Waitint for C<OK> packet.
 
 =back
 
