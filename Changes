@@ -1,6 +1,6 @@
 Revision history for Mojo::MySQL5
 
-0.08
+0.08     Sat Apr 18 06:27:45 2015
        * Support for Unix domain socket connection.
 
 0.07     Wed Apr  8 14:51:52 2015
