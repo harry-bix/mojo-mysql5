@@ -501,30 +501,47 @@ sub connect {
   $self->state('connecting');
   $self->_reset;
 
-  $self->{client} = Mojo::IOLoop::Client->new;
-  $self->{client}->reactor($self->_ioloop(0)->reactor) unless $cb;
-  weaken $self;
-
-  $self->{client}->on(connect => sub {
-    my ($client, $handle) = @_;
-    delete $self->{client};
-    $self->{socket} = $handle;
+  if ($self->url->host eq '' or $self->url->host eq 'localhost') {
+    if (!$self->url->options->{socket}) {
+      $self->url->options->{socket} = `mysql_config --socket`;
+      chomp $self->url->options->{socket};
+    }
+    warn "Connecting to UNIX socket '", $self->url->options->{socket}, "'\n" if DEBUG;
+    $self->{socket} = IO::Socket::UNIX->new(
+      Peer => $self->url->options->{socket},
+      Timeout => $self->url->options->{connect_timeout} // 10,
+      Blocking => 0
+    );
+    return unless $self->{socket};
     $self->state('connected');
     $self->_seq('connect', $cb);
-  });
-  $self->{client}->on(error => sub {
-    my ($client, $err) = @_;
-    delete $self->{client};
-    $self->state('disconnected');
-    $self->emit(error => $err);
-    $cb ? $self->$cb() : $self->_ioloop(0)->stop;
-  });
+  }
+  else {
+    $self->{client} = Mojo::IOLoop::Client->new;
+    $self->{client}->reactor($self->_ioloop(0)->reactor) unless $cb;
+    weaken $self;
 
-  $self->{client}->connect(
-    address => $self->url->host || 'localhost',
-    port => $self->url->port || 3306,
-    timeout => $self->url->options->{connect_timeout} // 10
-  );
+    $self->{client}->on(connect => sub {
+      my ($client, $handle) = @_;
+      delete $self->{client};
+      $self->{socket} = $handle;
+      $self->state('connected');
+      $self->_seq('connect', $cb);
+    });
+    $self->{client}->on(error => sub {
+      my ($client, $err) = @_;
+      delete $self->{client};
+      $self->state('disconnected');
+      $self->emit(error => $err);
+      $cb ? $self->$cb() : $self->_ioloop(0)->stop;
+    });
+
+    $self->{client}->connect(
+      address => $self->url->host || '127.0.0.1',
+      port => $self->url->port || 3306,
+      timeout => $self->url->options->{connect_timeout} // 10
+    );
+  }
 
   $self->_ioloop(0)->start unless $cb;
 }
@@ -759,6 +776,15 @@ after the given number of seconds.
 
 If enabled, the read or write operation to the server will timeout
 if it has not been successful after the given number of seconds.
+
+=item socket
+
+Unix socket that is used for connecting to the server.
+
+Determined by calling C<mysql_config --socket> unless specified.
+
+Unix socket is used if host part of L<"/url"> is C<''> or C<'localhost'>.
+Use C<'127.0.0.1'> to connect to local machine via TCP.
 
 =back
 
