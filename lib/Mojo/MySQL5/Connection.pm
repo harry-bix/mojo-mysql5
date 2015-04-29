@@ -783,7 +783,7 @@ Unix socket that is used for connecting to the server.
 
 Determined by calling C<mysql_config --socket> unless specified.
 
-Unix socket is used if host part of L<"/url"> is C<''> or C<'localhost'>.
+Unix socket is used if host part of L</"url"> is C<''> or C<'localhost'>.
 Use C<'127.0.0.1'> to connect to local machine via TCP.
 
 =back
