@@ -362,6 +362,8 @@ This is the class hierarchy of the L<Mojo::MySQL5> distribution.
 
 =item * L<Mojo::MySQL5::Migrations>
 
+=item * L<Mojo::MySQL5::PubSub>
+
 =item * L<Mojo::MySQL5::Results>
 
 =item * L<Mojo::MySQL5::Transaction>

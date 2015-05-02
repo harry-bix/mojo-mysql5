@@ -7,43 +7,47 @@ use constant DEBUG => $ENV{MOJO_PUBSUB_DEBUG} || 0;
 
 has 'mysql';
 
+sub DESTROY {
+  my $self = shift;
+  return unless $self->{db} and $self->mysql;
+  $self->mysql->db->query('delete from mojo_pubsub_subscribe where pid = ?', $self->_subscriber_pid);
+}
+
 sub listen {
   my ($self, $channel, $cb) = @_;
-  my $pid = $self->_db->pid;
-  warn "listen channel:$channel listening:$pid\n" if DEBUG;
-  $self->mysql->db->query(
-    'replace mojo_pubsub_subscribe(pid, channel, ts) values (?, ?, current_timestamp)', $pid, $channel);
+  my $pid = $self->_subscriber_pid;
+  warn "listen channel:$channel subscriber:$pid\n" if DEBUG;
+  $self->mysql->db->query('replace mojo_pubsub_subscribe(pid, channel, ts) values (?, ?, current_timestamp)',
+    $pid, $channel);
   push @{$self->{chans}{$channel}}, $cb;
   return $cb;
 }
 
 sub notify {
   my ($self, $channel, $payload) = @_;
+  my $db = $self->mysql->db;
   $payload //= '';
-  my $pid = $self->_db->pid;
-  warn "notify channel:$channel $payload listening:$pid\n" if DEBUG;
-  $self->mysql->db->query(
-    'insert into mojo_pubsub_notify(channel, payload) values (?, ?)', $channel, $payload);
+  warn "notify channel:$channel $payload\n" if DEBUG;
+  $self->_init($db) unless $self->{init}++;
+  $db->query('insert into mojo_pubsub_notify(channel, payload) values (?, ?)', $channel, $payload);
   return $self;
 }
 
 sub unlisten {
   my ($self, $channel, $cb) = @_;
-  my $pid = $self->_db->pid;
-  warn "unlisten channel:$channel listening:$pid\n" if DEBUG;
+  my $pid = $self->_subscriber_pid;
+  warn "unlisten channel:$channel subscriber:$pid\n" if DEBUG;
   my $chan = $self->{chans}{$channel};
   @$chan = grep { $cb ne $_ } @$chan;
   return $self if @$chan;
-  $self->mysql->db->query(
-    'delete from mojo_pubsub_subscribe where pid = ? and channel = ?', $pid, $channel);
+  $self->mysql->db->query('delete from mojo_pubsub_subscribe where pid = ? and channel = ?', $pid, $channel);
   delete $self->{chans}{$channel};
   return $self;
 }
 
 sub _notifications {
   my $self = shift;
-  my $result = $self->{db}->query(
-    'select id, channel, payload from mojo_pubsub_notify where id > ?', $self->{last_id});
+  my $result = $self->{db}->query('select id, channel, payload from mojo_pubsub_notify where id > ?', $self->{last_id});
 
   while (my $row = $result->array) {
     my ($id, $channel, $payload) = @$row;
@@ -54,50 +58,50 @@ sub _notifications {
   }
 }
 
-sub _db {
+sub _init {
+  my ($self, $db) = @_;
+
+  $self->mysql->migrations->name('pubsub')->from_data->migrate;
+
+  # cleanup old subscriptions and notifications
+  $db->query('delete from mojo_pubsub_notify where ts < date_add(current_timestamp, interval -10 minute)');
+  $db->query('delete from mojo_pubsub_subscribe where ts < date_add(current_timestamp, interval -1 hour)');
+}
+
+sub _subscriber_pid {
   my $self = shift;
 
   # Fork-safety
   if (($self->{pid} //= $$) ne $$) {
     my $pid = $self->{db}->pid if $self->{db};
-    warn '_DB forked pid:' . ($pid || 'N/A') . "\n" if DEBUG;
+    warn 'forked subscriber pid:' . ($pid || 'N/A') . "\n" if DEBUG;
     $self->{db}->disconnect if $pid;
-    delete @$self{qw(chans pid db)};
+    delete @$self{qw(chans init pid db)};
   }
 
-  if ($self->{db}) {
-    warn '_DB pid:' . $self->{db}->pid, "\n" if DEBUG;
-    return $self->{db};
-  }
+  return $self->{db}->pid if $self->{db};
 
-  $self->mysql->migrations->from_data(__PACKAGE__, 'pubsub')->migrate;
+  $self->{db} = $self->mysql->db;
+  my $pid = $self->{db}->pid;
 
-  my $db = $self->{db} = $self->mysql->db;
-  warn '_DB pid:' . $self->{db}->pid, "\n" if DEBUG;
+  $self->_init($self->{db}) unless $self->{init}++;
 
   if (defined $self->{last_id}) {
+
     # read unread notifications
     $self->_notifications;
   }
   else {
     # get id of the last message
-    my $array = $db->query(
-      'select id from mojo_pubsub_notify order by id desc limit 1')->array;
+    my $array = $self->{db}->query('select id from mojo_pubsub_notify order by id desc limit 1')->array;
     $self->{last_id} = defined $array ? $array->[0] : 0;
   }
 
-  # cleanup old subscriptions and notifications
-  $db->query(
-    'delete from mojo_pubsub_notify where ts < date_add(current_timestamp, interval -10 minute)');
-  $db->query(
-    'delete from mojo_pubsub_subscribe where ts < date_add(current_timestamp, interval -1 hour)');
-
   # re-subscribe
-  $db->query(
-    'replace mojo_pubsub_subscribe(pid, channel) values (?, ?)', $db->pid, $_)
+  $self->{db}->query('replace mojo_pubsub_subscribe(pid, channel) values (?, ?)', $pid, $_)
     for keys %{$self->{chans}};
 
-  weaken $db->{mysql};
+  weaken $self->{db}->{mysql};
   weaken $self;
 
   my $cb;
@@ -107,20 +111,20 @@ sub _db {
       warn "wake up error: $err" if DEBUG;
       eval { $db->disconnect };
       delete $self->{db};
-      eval { $self->_db };
+      eval { $self->_subscriber_pid };
     }
     elsif ($self and $self->{db}) {
       $self->_notifications;
-      $db->query('update mojo_pubsub_subscribe set ts = current_timestamp where pid = ?', $db->pid);
+      $db->query('update mojo_pubsub_subscribe set ts = current_timestamp where pid = ?', $pid);
       $db->query('select sleep(600)', $cb);
     }
   };
-  $db->query('select sleep(600)', $cb);
+  $self->{db}->query('select sleep(600)', $cb);
 
-  warn '_DB reconnect pid:' . $self->{db}->pid, "\n" if DEBUG;
-  $self->emit(reconnect => $db);
+  warn "reconnect subscriber pid: $pid\n" if DEBUG;
+  $self->emit(reconnect => $self->{db});
 
-  return $db;
+  return $pid;
 }
 
 1;
@@ -155,6 +159,15 @@ Single Database connection waits for notification by executing C<SLEEP> on serve
 C<connection_id> and subscribed channels in stored in C<mojo_pubsub_subscribe> table.
 Inserting new row in C<mojo_pubsub_notify> table triggers C<KILL QUERY> for
 all connections waiting for notification.
+
+C<PROCESS> privilege is needed for MySQL user to see other users processes.
+C<SUPER> privilege is needed to be able to execute C<KILL QUERY> for statements
+started by other users. 
+C<SUPER> privilege may be needed to be able to define trigger.
+
+If your applications use this module using different MySQL users it is important
+the migration script to be executed by user having C<SUPER> privilege on the database.
+
 
 =head1 EVENTS
 
@@ -233,11 +246,11 @@ L<Mojo::MySQL5>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
 __DATA__
 
 @@ pubsub
--- 1 up
-drop table if exists mojo_pubsub_subscribe;
-drop table if exists mojo_pubsub_notify;
-drop trigger if exists mojo_pubsub_notify_kill;
+-- 1 down
+drop table mojo_pubsub_subscribe;
+drop table mojo_pubsub_notify;
 
+-- 1 up
 create table mojo_pubsub_subscribe(
   id integer auto_increment primary key,
   pid integer not null,
@@ -250,7 +263,7 @@ create table mojo_pubsub_subscribe(
 create table mojo_pubsub_notify(
   id integer auto_increment primary key,
   channel varchar(64) not null,
-  payload varchar(256),
+  payload text,
   ts timestamp not null default current_timestamp,
   key channel_idx(channel),
   key ts_idx(ts)
