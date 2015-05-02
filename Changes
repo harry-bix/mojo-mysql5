@@ -1,5 +1,11 @@
 Revision history for Mojo::MySQL5
 
+0.09     Sat May  2 17:52:05 2015
+       * Added module Mojo::MySQL5::PubSub.
+       * Added pubsub attribute to Mojo::MySQL5.
+       * Fixed Mojo::MySQL5::Connection to handle disconnect while running query
+       * URL is cloned on connection creation to support per connection options
+
 0.08     Sat Apr 18 06:27:45 2015
        * Support for Unix domain socket connection.
 
