@@ -83,6 +83,7 @@ sub _subscriber_pid {
 
   $self->{db} = $self->mysql->db;
   my $pid = $self->{db}->pid;
+  $self->{db}->connection->url->options->{query_timeout} = 610;
 
   $self->_init($self->{db}) unless $self->{init}++;
 
@@ -251,6 +252,9 @@ drop table mojo_pubsub_subscribe;
 drop table mojo_pubsub_notify;
 
 -- 1 up
+drop table if exists mojo_pubsub_subscribe;
+drop table if exists mojo_pubsub_notify;
+
 create table mojo_pubsub_subscribe(
   id integer auto_increment primary key,
   pid integer not null,
