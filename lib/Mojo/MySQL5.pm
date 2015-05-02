@@ -2,9 +2,10 @@ package Mojo::MySQL5;
 use Mojo::Base 'Mojo::EventEmitter';
 
 use Carp 'croak';
-use Mojo::MySQL5::Migrations;
-use Mojo::MySQL5::URL;
 use Mojo::MySQL5::Database;
+use Mojo::MySQL5::Migrations;
+use Mojo::MySQL5::PubSub;
+use Mojo::MySQL5::URL;
 use Scalar::Util 'weaken';
 
 has max_connections => 5;
@@ -12,6 +13,11 @@ has migrations      => sub {
   my $migrations = Mojo::MySQL5::Migrations->new(mysql => shift);
   weaken $migrations->{mysql};
   return $migrations;
+};
+has pubsub => sub {
+  my $pubsub = Mojo::MySQL5::PubSub->new(mysql => shift);
+  weaken $pubsub->{mysql};
+  return $pubsub;
 };
 has url             => sub { Mojo::MySQL5::URL->new('mysql:///test') };
 
@@ -141,6 +147,20 @@ Mojo::MySQL5 - Pure-Perl non-blocking I/O MySQL Connector
     }
   )->wait;
 
+  # Send and receive notifications non-blocking
+  $mysql->pubsub->listen(foo => sub {
+    my ($pubsub, $payload) = @_;
+    say "foo: $payload";
+    $pubsub->notify(bar => $payload);
+  });
+  $mysql->pubsub->listen(bar => sub {
+    my ($pubsub, $payload) = @_;
+    say "bar: $payload";
+  });
+  $mysql->pubsub->notify(foo => 'MySQL rocks!');
+
+  Mojo::IOLoop->start unless Mojo::IOLoop->is_running;
+
 =head1 DESCRIPTION
 
 L<Mojo::MySQL5> makes L<MySQL|http://www.mysql.org> a lot of fun to use with the
@@ -231,6 +251,23 @@ Not all MySQL storage engines (like C<MYISAM>) support transactions.
 
 This means database will most likely be left in unknown state if migration script fails.
 Use this feature with caution and remember to always backup your database.
+
+=head2 pubsub
+
+  my $pubsub = $mysql->pubsub;
+  $mysql     = $mysql->pubsub(Mojo::MySQL5::PubSub->new);
+
+L<Mojo::MySQL5::PubSub> object you can use to send and receive notifications very
+efficiently, by sharing a single database connection with many consumers.
+
+  # Subscribe to a channel
+  $mysql->pubsub->listen(news => sub {
+    my ($pubsub, $payload) = @_;
+    say "Received: $payload";
+  });
+
+  # Notify a channel
+  $mysql->pubsub->notify(news => 'MySQL rocks!');
 
 =head2 url
 
@@ -324,6 +361,8 @@ This is the class hierarchy of the L<Mojo::MySQL5> distribution.
 =item * L<Mojo::MySQL5::Database>
 
 =item * L<Mojo::MySQL5::Migrations>
+
+=item * L<Mojo::MySQL5::PubSub>
 
 =item * L<Mojo::MySQL5::Results>
 

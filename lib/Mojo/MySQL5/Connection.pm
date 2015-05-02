@@ -475,8 +475,10 @@ sub _seq {
     $self->{error_message} //= 'timeout';
   });
   $self->{stream}->on(close => sub {
+    warn 'stream closed state:', $self->state, "\n" if DEBUG;
     $self->{socket} = undef;
     $self->state('disconnected');
+    $self->{error_message} //= 'disconnected' unless $cmd eq 'disconnect';
     $cb ? $self->$cb() : $self->_ioloop(0)->stop;
   });
 
@@ -783,7 +785,7 @@ Unix socket that is used for connecting to the server.
 
 Determined by calling C<mysql_config --socket> unless specified.
 
-Unix socket is used if host part of L<"/url"> is C<''> or C<'localhost'>.
+Unix socket is used if host part of L</"url"> is C<''> or C<'localhost'>.
 Use C<'127.0.0.1'> to connect to local machine via TCP.
 
 =back
