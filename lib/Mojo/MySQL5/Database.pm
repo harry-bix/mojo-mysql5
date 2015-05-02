@@ -31,7 +31,7 @@ sub begin {
 
 sub connect {
   my $self = shift;
-  my $c = Mojo::MySQL5::Connection->new(url => $self->mysql->url);
+  my $c = Mojo::MySQL5::Connection->new(url => $self->mysql->url->clone);
   $c->on(error => sub {
     my ($c, $err) = @_;
     warn 'Unable to connect to "', $self->mysql->url, '" ', $err, "\n";
