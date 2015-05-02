@@ -475,8 +475,10 @@ sub _seq {
     $self->{error_message} //= 'timeout';
   });
   $self->{stream}->on(close => sub {
+    warn 'stream closed state:', $self->state, "\n" if DEBUG;
     $self->{socket} = undef;
     $self->state('disconnected');
+    $self->{error_message} //= 'disconnected' unless $cmd eq 'disconnect';
     $cb ? $self->$cb() : $self->_ioloop(0)->stop;
   });
 
