@@ -56,7 +56,7 @@ done_testing();
 __DATA__
 @@ app_test
 -- 1 up
-create table if not exists app_test (stuff text);
+create table if not exists app_test (stuff text) default charset=utf8 default collate utf8_unicode_ci;
 delimiter //
 create procedure mojo_app_test()
   deterministic reads sql data

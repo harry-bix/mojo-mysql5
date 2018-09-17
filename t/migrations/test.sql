@@ -1,5 +1,5 @@
 -- 1 up
-create table if not exists migration_test_three (baz varchar(255));
+create table if not exists migration_test_three (baz varchar(255)) default charset=utf8 default collate utf8_unicode_ci;
 -- 1 down
 drop table if exists migration_test_three;
 -- 2 up

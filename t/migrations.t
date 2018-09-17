@@ -42,7 +42,7 @@ is $mysql->migrations->name('test2')->from_data(__PACKAGE__)->latest, 2,
 # Different syntax variations
 $mysql->migrations->name('migrations_test')->from_string(<<EOF);
 -- 1 up
-create table if not exists migration_test_one (foo varchar(255));
+create table if not exists migration_test_one (foo varchar(255)) default charset=utf8 default collate utf8_unicode_ci;
 
 -- 1down
 
