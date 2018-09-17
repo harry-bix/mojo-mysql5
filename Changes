@@ -1,5 +1,9 @@
 Revision history for Mojo::MySQL5
 
+0.10     Mon Set 17 14:08:05 2018
+       * Upgraded use of slurp with Mojo::File package.
+       * Set default charset and default collate for mojo lite and migration tests.
+
 0.09     Sat May  2 17:52:05 2015
        * Added module Mojo::MySQL5::PubSub.
        * Added pubsub attribute to Mojo::MySQL5.

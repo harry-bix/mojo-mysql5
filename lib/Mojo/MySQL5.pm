@@ -21,7 +21,7 @@ has pubsub => sub {
 };
 has url             => sub { Mojo::MySQL5::URL->new('mysql:///test') };
 
-our $VERSION = '0.09';
+our $VERSION = '0.10';
 
 sub db {
   my $self = shift;
